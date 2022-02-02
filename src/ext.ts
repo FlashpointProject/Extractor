@@ -4,18 +4,46 @@ import * as path from 'path';
 
 export async function activate(context: flashpoint.ExtensionContext) {
   const checkGame = async (gameData: flashpoint.GameData) => {
+    flashpoint.log.info("Calling checkGame");
+    flashpoint.log.info("gameData.parameters: " + gameData.parameters);
     if (gameData.parameters === '-extract') {
+      flashpoint.log.info("Extracting");
       const prefs = flashpoint.getPreferences();
       const tempDir = path.join(flashpoint.extensionPath, '.temp');
       await fs.promises.mkdir(tempDir, { recursive: true });
-      const gamePath = path.join(flashpoint.config.flashpointPath, prefs.dataPacksFolderPath, gameData.path);
-      const htdocsPath = path.join(flashpoint.config.flashpointPath, prefs.htdocsFolderPath);
-      await flashpoint.unzipFile(gamePath, tempDir, {});
-      await fs.copy(path.join(tempDir, 'content'), htdocsPath);
+      const extractedFileName = path.join(flashpoint.extensionPath, 'extracted.json');
+      const extractedContents = await fs.promises.readFile(extractedFileName, 'utf-8').catch(() => '[]');
+      flashpoint.log.info("extractedContents: " + extractedContents);
+      const extracted = extractedContents ? JSON.parse(extractedContents) as [string] : [];
+      if (!extracted.includes(gameData.gameId)) {
+        flashpoint.log.info("gameId not in extracted");
+        const gamePath = path.join(flashpoint.config.flashpointPath, prefs.dataPacksFolderPath, gameData.path);
+        const htdocsPath = path.join(flashpoint.config.flashpointPath, prefs.htdocsFolderPath);
+        flashpoint.log.info("gamePath: " + gamePath);
+        flashpoint.log.info("htdocsPath: " + htdocsPath);
+        try {
+          await flashpoint.unzipFile(gamePath, tempDir, {});
+          const gameFiles = await fs.promises.readdir(path.join(tempDir, 'content'));
+          const movePromises = [];
+          for (let gameFile of gameFiles) {
+            flashpoint.log.info("Gamefile: " + gameFile);
+            movePromises.push(fs.move(path.join(tempDir, 'content', gameFile), path.join(htdocsPath, gameFile), {overwrite: true}));
+          }
+          await Promise.all(movePromises);
+          flashpoint.log.info("Game unzipped");
+        } catch (e) {
+          flashpoint.log.error("Unable to unzip game!");
+          flashpoint.log.error(e);
+        }
+        extracted.push(gameData.gameId);
+        flashpoint.log.info("New extracted JSON: " + JSON.stringify(extracted));
+        await fs.promises.writeFile(extractedFileName, JSON.stringify(extracted), 'utf-8');
+      }
     }
   }
   
   flashpoint.registerDisposable(context.subscriptions, flashpoint.games.onDidInstallGameData(checkGame));
+  flashpoint.registerDisposable(context.subscriptions, flashpoint.games.onWillLaunchGame((gameLaunch) => checkGame(gameLaunch.activeData)));
 
   flashpoint.registerDisposable(context.subscriptions, flashpoint.commands.registerCommand('automount-extractor.extract-all', async () => {
     flashpoint.status.setStatus('devConsole', 'Extracting all relevant games...');
