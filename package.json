@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.12",
+    "@types/klaw": "^3.0.3",
     "@types/node": "14.10.1",
     "gulp": "4.0.2",
     "gulp-zip": "5.0.2",
@@ -33,6 +34,7 @@
   },
   "dependencies": {
     "fs-extra": "^10.0.0",
+    "klaw": "^4.0.1",
     "ts-debounce": "^2.0.1"
   }
 }

@@ -1,5 +1,6 @@
 import * as flashpoint from 'flashpoint-launcher';
 import * as fs from 'fs-extra';
+import * as klaw from 'klaw';
 import * as path from 'path';
 
 export async function activate(context: flashpoint.ExtensionContext) {
@@ -23,11 +24,16 @@ export async function activate(context: flashpoint.ExtensionContext) {
         flashpoint.log.info("htdocsPath: " + htdocsPath);
         try {
           await flashpoint.unzipFile(gamePath, tempDir, {});
-          const gameFiles = await fs.promises.readdir(path.join(tempDir, 'content'));
+          //const gameFiles = await fs.promises.readdir(path.join(tempDir, 'content'));
           const movePromises = [];
-          for (let gameFile of gameFiles) {
-            flashpoint.log.info("Gamefile: " + gameFile);
-            movePromises.push(fs.move(path.join(tempDir, 'content', gameFile), path.join(htdocsPath, gameFile), {overwrite: true}));
+          for await (let gameFileItem of klaw(path.join(tempDir, 'content'))) {
+            if (gameFileItem.stats.isFile()) {
+              const gameFileSource = gameFileItem.path;
+              const gameFileRelative = path.relative(path.join(tempDir, 'content'), gameFileSource);
+              const gameFileDest = path.join(htdocsPath, gameFileRelative);
+              flashpoint.log.info("Gamefile source: " + gameFileSource + " Gamefile relative: " + gameFileRelative + " Gamefile dest: "+ gameFileDest);
+              movePromises.push(fs.move(gameFileSource, gameFileDest, {overwrite: true}));   
+            }
           }
           await Promise.all(movePromises);
           flashpoint.log.info("Game unzipped");
