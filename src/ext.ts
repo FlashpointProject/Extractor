@@ -36,6 +36,7 @@ export async function activate(context: flashpoint.ExtensionContext) {
             }
           }
           await Promise.all(movePromises);
+          await fs.promises.rmdir(tempDir, { recursive: true });
           flashpoint.log.info("Game unzipped");
         } catch (e) {
           flashpoint.log.error("Unable to unzip game!");
