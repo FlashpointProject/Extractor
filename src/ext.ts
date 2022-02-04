@@ -38,13 +38,13 @@ export async function activate(context: flashpoint.ExtensionContext) {
           await Promise.all(movePromises);
           await fs.promises.rmdir(tempDir, { recursive: true });
           flashpoint.log.info("Game unzipped");
+          extracted.push(gameData.gameId);
+          flashpoint.log.info("New extracted JSON: " + JSON.stringify(extracted));
+          await fs.promises.writeFile(extractedFileName, JSON.stringify(extracted), 'utf-8');
         } catch (e) {
           flashpoint.log.error("Unable to unzip game!");
           flashpoint.log.error(e);
         }
-        extracted.push(gameData.gameId);
-        flashpoint.log.info("New extracted JSON: " + JSON.stringify(extracted));
-        await fs.promises.writeFile(extractedFileName, JSON.stringify(extracted), 'utf-8');
       }
     }
   }
