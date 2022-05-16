@@ -50,7 +50,11 @@ export async function activate(context: flashpoint.ExtensionContext) {
   }
   
   flashpoint.registerDisposable(context.subscriptions, flashpoint.games.onDidInstallGameData(checkGame));
-  flashpoint.registerDisposable(context.subscriptions, flashpoint.games.onWillLaunchGame((gameLaunch) => checkGame(gameLaunch.activeData)));
+  flashpoint.registerDisposable(context.subscriptions, flashpoint.games.onWillLaunchGame((gameLaunch) => {
+    if (gameLaunch.activeData) {
+      checkGame(gameLaunch.activeData);
+    }
+  }));
 
   flashpoint.registerDisposable(context.subscriptions, flashpoint.commands.registerCommand('automount-extractor.extract-all', async () => {
     flashpoint.status.setStatus('devConsole', 'Extracting all relevant games...');
