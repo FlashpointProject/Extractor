@@ -2,7 +2,7 @@
   "name": "automount-extractor",
   "displayName": "Extractor",
   "author": "Colin Berry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "launcherVersion": "10.0.0",
   "description": "Handles extraction of specific data packs",
   "main": "./dist/ext.js",
